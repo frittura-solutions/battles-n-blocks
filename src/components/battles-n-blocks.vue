@@ -1,8 +1,12 @@
 <template>
-    <hello-metamask />
+    <div>
+        <hello-metamask />
+        <main-component />
+    </div>
 </template>
 <script>
 import HelloMetamask from '@/components/hello-metamask'
+import MainComponent from '@/components/main-component'
 export default {
     name: 'battles-n-bottles',
     beforeCreate() {
@@ -10,7 +14,8 @@ export default {
         this.$store.dispatch('registerWeb3')
     },
     components: {
-        'hello-metamask': HelloMetamask
+        'hello-metamask': HelloMetamask,
+        'main-component': MainComponent
     }
 }
 </script>

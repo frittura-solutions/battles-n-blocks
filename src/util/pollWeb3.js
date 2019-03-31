@@ -9,6 +9,11 @@ let pollWeb3 = function(state) {
         if (web3 && store.state.web3.web3Instance) {
             if (web3.eth.coinbase !== store.state.web3.coinbase) {
                 let newCoinbase = web3.eth.coinbase
+                web3.eth.defaultAccount = web3.eth.coinbase
+                web3.personal.unlockAccount(web3.eth.defaultAccount, function(err, success) {
+                    if (!err)
+                        console.log(success);
+                })
                 web3.eth.getBalance(web3.eth.coinbase, function(err, newBalance) {
                     if (err) {
                         console.log(err)
