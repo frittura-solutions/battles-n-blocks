@@ -7,6 +7,11 @@ let state = {
         balance: null,
         error: null
     },
-    contractInstance: null
+    contractInstance: null,
+    hero: {
+    	name: null,
+    	position: null,
+        created: null
+    }
 }
 export default state

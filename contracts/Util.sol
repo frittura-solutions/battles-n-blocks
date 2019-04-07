@@ -19,6 +19,11 @@ library Util {
 	function min(uint a, uint b) public pure returns (uint) {
 	        return a < b ? a : b;
 	    }	
+
+	function genRandom() private view returns (uint) {
+    	uint rand = uint(keccak256(abi.encodePacked(block.blockhash(block.number-1)))) + uint(keccak256(abi.encodePacked(block.coinbase)));
+    	return uint(rand % (10 ** 20));
+	}
 }
 
 

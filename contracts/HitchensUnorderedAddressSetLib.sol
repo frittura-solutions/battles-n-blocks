@@ -31,38 +31,43 @@ THIS SOFTWARE IS NOT TESTED OR AUDITED. DO NOT USE FOR PRODUCTION.
 */
 
 import "./Ownable.sol";
-import "./HitchensUnorderedAddressSetLib.sol";
 
-contract HitchensUnorderedAddressSet {
+library HitchensUnorderedAddressSetLib {
     
-    using HitchensUnorderedAddressSetLib for HitchensUnorderedAddressSetLib.Set;
-    HitchensUnorderedAddressSetLib.Set set;
-    
-    event LogUpdate(address sender, string action, address key);
-    
-    function exists(address key) public view returns(bool) {
-        return set.exists(key);
+    struct Set {
+        mapping(address => uint) keyPointers;
+        address[] keyList;
     }
     
-    function insert(address key) public {
-        set.insert(key);
-        emit LogUpdate(msg.sender, "insert", key);
+    function insert(Set storage self, address key) internal {
+        require(!exists(self, key), "UnorderedAddressSet(101) - Key already exists in the set.");
+        self.keyPointers[key] = self.keyList.push(key)-1;
     }
     
-    function remove(address key) public {
-        set.remove(key);
-        emit LogUpdate(msg.sender, "remove", key);
+    function remove(Set storage self, address key) internal {
+        require(exists(self, key), "UnorderedKeySet(102) - Key does not exist in the set.");
+        address keyToMove = self.keyList[count(self)-1];
+        uint rowToReplace = self.keyPointers[key];
+        self.keyPointers[keyToMove] = rowToReplace;
+        self.keyList[rowToReplace] = keyToMove;
+        delete self.keyPointers[key];
+        self.keyList.length--;
     }
     
-    function count() public view returns(uint) {
-        return set.count();
+    function count(Set storage self) internal view returns(uint) {
+        return(self.keyList.length);
     }
     
-    function keyAtIndex(uint index) public view returns(address) {
-        return set.keyAtIndex(index);
+    function exists(Set storage self, address key) internal view returns(bool) {
+        if(self.keyList.length == 0) return false;
+        return self.keyList[self.keyPointers[key]] == key;
     }
     
-    function nukeSet() public {
-        set.nukeSet();
+    function keyAtIndex(Set storage self, uint index) internal view returns(address) {
+        return self.keyList[index];
+    }
+    
+    function nukeSet(Set storage self) public {
+        delete self.keyList;
     }
 }
