@@ -1,26 +1,30 @@
 <template>
     <div class="main container">
         <h1>Battles & Blocks</h1>
-        <!-- <ul>
-            <li v-on:click="createHero">Create</li>
-            <li v-on:click="heroCount">Count</li>
-        </ul> -->
-        <!-- <p><i aria-hidden="true"></i> {{heroName}}: Block {{heroPosition}}</p> -->
         <div class="event">
-            <p v-if="hero.created"><i aria-hidden="true" class="fa "></i> {{hero.name}}: Block {{hero.position}}</p>
+            <p v-if="hero.created"><i aria-hidden="true" class="fa "></i> {{hero.name}}</p>
             <div v-else><i aria-hidden="true" class="fa"></i>
                 <ul>
                     <p>Create your Hero</p>
-                    <input v-model="nameEntry" placeholder="Gesu'">
-                    <input v-model="strengthEntry" placeholder="0">
-                    <input v-model="dexterityEntry" placeholder="0">
-                    <input v-model="resistanceEntry" placeholder="0">
-                    <input v-model="magicEntry" placeholder="0">
+                    <input v-model="nameEntry" placeholder="Name">
+                    <input v-model="strengthEntry" placeholder="Strength">
+                    <input v-model="dexterityEntry" placeholder="Dexterity">
+                    <input v-model="resistanceEntry" placeholder="Resistance">
+                    <input v-model="magicEntry" placeholder="Magic">
                     <li v-on:click="createHero">Create</li>
                 </ul>
             </div>
+            <p>{{log}}</p>
+            <div v-for="(item, key) in heroDict">
+                <div style="border-style:solid;border-top-width: 10px;">
+                    <p>{{item[0]}} HP: {{item[6]}} (Block {{item[1]}})</p>
+                    <p>{{key}}
+                        <button v-if="key != coinbase" @click="attackHero(key)">Attack!</button>
+                    </p>
+                    <p>Str: {{item[2]}} Dex: {{item[3]}} Res: {{item[4]}} Mag: {{item[5]}}</p>
+                </div>
+            </div>
             <li v-on:click="heroCount">List</li>
-            <span v-html="heroList"></span>
         </div>
     </div>
 </template>
@@ -31,15 +35,17 @@ export default {
     data() {
         return {
             nameEntry: null,
-            heroList: "<p></p>",
+            heroDict: {},
             strengthEntry: null,
             dexterityEntry: null,
             resistanceEntry: null,
             magicEntry: null,
-            pending: false
+            pending: false,
+            log: ""
         }
     },
     computed: mapState({
+        coinbase: state => state.web3.coinbase,
         hero: state => state.hero
     }),
     methods: {
@@ -65,6 +71,7 @@ export default {
                             console.log('could not get event LogNewHero()')
                         } else {
                             this.pending = false
+                            console.log('New hero created succesfully', result)
                         }
                     })
                 }
@@ -72,15 +79,13 @@ export default {
         },
         heroCount(event) {
             //this.$store.dispatch('getContractInstance')
-            let tot = 0;
-            this.heroList = "<p></p>";
             this.$store.state.contractInstance().getHeroCount({}, (err, result) => {
                 if (err) {
                     console.log(err)
                 } else {
-
-                    tot = result.c[0];
+                    let tot = result.c[0];
                     console.log("there are ", tot, " heores")
+                    this.heroDict = {};
                     for (var i = 0; i < tot; i++) {
                         this.$store.state.contractInstance().getHeroAtIndex(i, {}, (err, result) => {
                             if (err) {
@@ -91,10 +96,8 @@ export default {
                                     if (err) {
                                         console.log(err)
                                     } else {
-                                        this.heroList += `<p>${result} ${stats}</p>`;
-                                        if (result != this.$store.state.web3.coinbase) {
-                                            this.heroList += `<button v:on-click="${this.attackHero(this, result)}" >Attack!</button>`;
-                                        }
+                                        console.log(this.heroDict, result, stats)
+                                        this.$set(this.heroDict, result, stats)
                                     }
                                 })
 
@@ -103,18 +106,34 @@ export default {
                     }
                 }
             })
-            // this.$store.state.contractInstance().getHero(this.$store.state.web3.coinbase, {}, (err, result) => {
-            //     if (err) {
-            //         console.log(err)
-            //     } else {
-            //         console.log(result);
-            //     }
-            // })
-            console.log(this.hero);
-
         },
-        attackHero(event, target) {
-            console.log("attacking ", target);
+        attackHero(target) {
+            console.log(this.coinbase, " is attacking ", target)
+            this.$store.state.contractInstance().attack(target, {
+                gas: 300000,
+                from: this.$store.state.web3.coinbase
+            }, (err, result) => {
+                if (err) {
+                    console.log(err)
+                } else {
+                    let LogAttack = this.$store.state.contractInstance().LogAttack()
+                    LogAttack.watch((err, result) => {
+                        if (err) {
+                            console.log('could not get event LogAttack()')
+                        } else {
+                            console.log('Attack succesfull', result.args)
+                            this.log = result.args
+                            this.$store.state.contractInstance().heroes(target, {}, (err, stats) => {
+                                if (err) {
+                                    console.log(err)
+                                } else {
+                                    this.$set(this.heroDict, target, stats)
+                                }
+                            })
+                        }
+                    })
+                }
+            })
         }
     },
     mounted() {
