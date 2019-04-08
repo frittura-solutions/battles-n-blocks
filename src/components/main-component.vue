@@ -2,29 +2,33 @@
     <div class="main container">
         <h1>Battles & Blocks</h1>
         <div class="event">
-            <p v-if="hero.created"><i aria-hidden="true" class="fa "></i> {{hero.name}}</p>
+            <div v-if="heroCreated" style="border-style:solid;border-color: red;">
+                <p>{{hero.name}} HP: {{hero.HP}} (Block {{hero.position}})</p>
+                <p>Str: {{hero.strength}} Dex: {{hero.dexterity}} Res: {{hero.resistance}} Mag: {{hero.magic}}</p>
+            </div>
             <div v-else><i aria-hidden="true" class="fa"></i>
                 <ul>
-                    <p>Create your Hero</p>
-                    <input v-model="nameEntry" placeholder="Name">
-                    <input v-model="strengthEntry" placeholder="Strength">
-                    <input v-model="dexterityEntry" placeholder="Dexterity">
-                    <input v-model="resistanceEntry" placeholder="Resistance">
-                    <input v-model="magicEntry" placeholder="Magic">
-                    <li v-on:click="createHero">Create</li>
+                    <div>
+                        <input v-model="nameEntry" placeholder="Name">
+                        <input v-model="strengthEntry" placeholder="Strength">
+                        <input v-model="dexterityEntry" placeholder="Dexterity">
+                        <input v-model="resistanceEntry" placeholder="Resistance">
+                        <input v-model="magicEntry" placeholder="Magic">
+                    </div>
+                    <li v-on:click="createHero">Create your Hero</li>
                 </ul>
             </div>
             <p>{{log}}</p>
             <div v-for="(item, key) in heroDict">
-                <div style="border-style:solid;border-top-width: 10px;">
-                    <p>{{item[0]}} HP: {{item[6]}} (Block {{item[1]}})</p>
+                <div v-if="key != coinbase" style="border-style:solid;border-top-width: 10px;">
+                    <p>{{item.name}} HP: {{item.HP}} (Block {{item.position}})</p>
                     <p>{{key}}
-                        <button v-if="key != coinbase" @click="attackHero(key)">Attack!</button>
+                        <button @click="attackHero(key)">Attack!</button>
                     </p>
-                    <p>Str: {{item[2]}} Dex: {{item[3]}} Res: {{item[4]}} Mag: {{item[5]}}</p>
+                    <p>Str: {{item.strength}} Dex: {{item.dexterity}} Res: {{item.resistance}} Mag: {{item.magic}}</p>
                 </div>
             </div>
-            <li v-on:click="heroCount">List</li>
+            <!-- <li v-on:click="heroCount">List</li> -->
         </div>
     </div>
 </template>
@@ -42,12 +46,34 @@ export default {
             magicEntry: null,
             pending: false,
             log: ""
+
         }
     },
     computed: mapState({
         coinbase: state => state.web3.coinbase,
-        hero: state => state.hero
+        heroCreated: state => state.hero.created,
+        contract: state => state.contractInstance,
+        hero: function() {
+            if (!this.heroCreated) {
+                return {
+                    name: "",
+                    position: "",
+                    strength: "",
+                    dexterity: "",
+                    resistance: "",
+                    magic: "",
+                    HP: "",
+                    exp: ""
+                }
+            }
+            return this.heroDict[this.coinbase]
+        }
     }),
+    watch: {
+        contract: function() {
+            this.heroCount(null)
+        }
+    },
     methods: {
         createHero(event) {
             console.log('Creating Hero: name', this.nameEntry);
@@ -84,7 +110,6 @@ export default {
                     console.log(err)
                 } else {
                     let tot = result.c[0];
-                    console.log("there are ", tot, " heores")
                     this.heroDict = {};
                     for (var i = 0; i < tot; i++) {
                         this.$store.state.contractInstance().getHeroAtIndex(i, {}, (err, result) => {
@@ -96,8 +121,17 @@ export default {
                                     if (err) {
                                         console.log(err)
                                     } else {
-                                        console.log(this.heroDict, result, stats)
-                                        this.$set(this.heroDict, result, stats)
+                                        let statsDict = {
+                                            name: stats[0],
+                                            position: stats[1],
+                                            strength: stats[2],
+                                            dexterity: stats[3],
+                                            resistance: stats[4],
+                                            magic: stats[5],
+                                            HP: stats[6],
+                                            exp: stats[7]
+                                        }
+                                        this.$set(this.heroDict, result, statsDict)
                                     }
                                 })
 
@@ -127,7 +161,17 @@ export default {
                                 if (err) {
                                     console.log(err)
                                 } else {
-                                    this.$set(this.heroDict, target, stats)
+                                    let statsDict = {
+                                        name: stats[0],
+                                        position: stats[1],
+                                        strength: stats[2],
+                                        dexterity: stats[3],
+                                        resistance: stats[4],
+                                        magic: stats[5],
+                                        HP: stats[6],
+                                        exp: stats[7]
+                                    }
+                                    this.$set(this.heroDict, target, statsDict)
                                 }
                             })
                         }
@@ -137,6 +181,7 @@ export default {
         }
     },
     mounted() {
+        //this.heroCount(null);
         // console.log('dispatching getContractInstance')
         // this.$store.dispatch('getContractInstance')
         //this.$store.dispatch('pollWeb3')

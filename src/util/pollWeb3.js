@@ -10,7 +10,7 @@ let pollWeb3 = function(state) {
             if (store.state.contractInstance) {
                 store.state.contractInstance().getHero(store.state.web3.coinbase, {}, (err, result) => {
                     if (err) {
-                        console.log(err)
+                        //console.log(err)
                         store.dispatch('pollWeb3', {
                             coinbase: store.state.web3.coinbase,
                             balance: store.state.web3.balance,

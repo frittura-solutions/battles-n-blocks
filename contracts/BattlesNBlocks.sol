@@ -22,18 +22,13 @@ contract BattlesNBlocks is Ownable {
     uint value;
     uint exp;
     mapping (uint => Item) inventory;
-    mapping (uint => Ability) abilities;
+    HitchensUnorderedAddressSetLib.Set abilities;
   }
 
   struct Item {
     string name;
     uint id;
     address owner;
-  }
-
-  struct Ability {
-    bool hasTarget;
-    address contractAddr;
   }
 
   mapping(address => Hero) public heroes;
@@ -110,7 +105,7 @@ contract BattlesNBlocks is Ownable {
       require(heroSet.exists(target), "Invalid target");
       Hero storage h = heroes[msg.sender];
       Hero storage t = heroes[target];
-      uint dmg = Util.max(1, h.strength-t.resistance);
+      uint dmg = h.strength <= t.resistance ? 1: h.strength - t.resistance;
       t.HP = dmg >= t.HP ? 0 : t.HP - dmg;
       emit LogAttack(msg.sender, target, dmg);
       return true;

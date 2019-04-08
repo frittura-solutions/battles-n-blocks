@@ -28,4 +28,6 @@ npm test
 ```
 
 ## Blockchain deployment
+
 Get contract ABI and Address for contracts/BattlesNBlocks.sol from (e.g.) remix, paste them in src/util/constants/battleBlocksContract.js .
+Needs metamask.
